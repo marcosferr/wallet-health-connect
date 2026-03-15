@@ -89,7 +89,7 @@ export function DashboardSidebar({
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Activity className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="text-lg font-bold text-foreground">LifeSync</span>
+              <span className="text-lg font-bold text-foreground">LifeStatus</span>
             </div>
           )}
           {collapsed && (
