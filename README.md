@@ -24,6 +24,41 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## External Integrations
+
+This dashboard can read live data from:
+
+- HealthConnectGateway v2
+- Budget Bakers Wallet API
+
+The app now proxies both integrations through internal Next.js API routes so you can keep tokens server-side and avoid browser CORS issues.
+
+### Configuration priority
+
+1. Values saved in the settings dialog (`localStorage` in the browser)
+2. Server-side environment variables from `.env.local`
+3. Built-in mock data
+
+If no credentials are available, or if a provider is temporarily unavailable, the UI stays usable with mock charts and cards.
+
+### `.env.local`
+
+Create a `.env.local` file based on `.env.example`.
+
+Recommended values for your setup:
+
+```env
+HCGATEWAY_BASE_URL=https://health.tereredev.com
+HCGATEWAY_TOKEN=your_healthconnectgateway_token
+WALLET_API_TOKEN=your_budget_bakers_wallet_token
+```
+
+Notes:
+
+- `HCGATEWAY_BASE_URL` should be the host only. The app adds `/api/v2/...` internally.
+- Wallet API calls are sent to `https://rest.budgetbakers.com/wallet/v1/api`.
+- You can still override these values per browser session from the in-app settings dialog.
+
 ## Learn More
 
 To learn more, take a look at the following resources:

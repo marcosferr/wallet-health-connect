@@ -12,23 +12,14 @@ import {
   Activity,
   Wallet,
   Heart,
-  Moon,
   TrendingUp,
-  TrendingDown,
   AlertCircle,
   Download,
-  Calendar,
+  Settings,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useApiData } from "@/hooks/use-api-data"
-import {
-  mockStepsHistory,
-  mockCaloriesHistory,
-  mockHeartRateHistory,
-  mockSleepHistory,
-  mockWeightHistory,
-} from "@/lib/mock-data"
 import type { ApiConfig } from "@/lib/types"
 import {
   AreaChart,
@@ -48,7 +39,6 @@ export default function Dashboard() {
   const [activeSection, setActiveSection] = useState<"overview" | "health" | "finance">("overview")
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("week")
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [config, setConfig] = useState<ApiConfig>({
     healthConnectUrl: "",
     healthConnectToken: "",
@@ -59,9 +49,23 @@ export default function Dashboard() {
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Fetch real data from APIs
-  const { healthMetrics, financeMetrics, accounts, recentTransactions, incomeHistory, expenseHistory, expensesByCategory, dailySpending, isLoading, error } = useApiData(config)
-
-  const isUsingMockData = !config.healthConnectUrl && !config.walletApiToken
+  const {
+    healthMetrics,
+    healthCharts,
+    financeMetrics,
+    financeCurrency,
+    accounts,
+    recentTransactions,
+    incomeHistory,
+    expenseHistory,
+    expensesByCategory,
+    dailySpending,
+    healthStatus,
+    walletStatus,
+    isUsingMockData,
+    isLoading,
+    error,
+  } = useApiData(config)
 
   useEffect(() => {
     // Load config from localStorage
@@ -91,8 +95,18 @@ export default function Dashboard() {
     setIsHydrated(true)
   }, [])
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value)
+  const formatCurrency = (value: number, currency = "EUR") => {
+    const normalizedCurrency = currency.toUpperCase()
+    const locale = normalizedCurrency === "PYG" ? "es-PY" : "es-ES"
+
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: normalizedCurrency,
+      currencyDisplay: normalizedCurrency === "PYG" ? "narrowSymbol" : "symbol",
+      minimumFractionDigits: normalizedCurrency === "PYG" ? 0 : 2,
+      maximumFractionDigits: normalizedCurrency === "PYG" ? 0 : 2,
+    }).format(value)
+  }
 
   // Save config to localStorage when it changes
   useEffect(() => {
@@ -124,7 +138,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Balance Total"
-          value={formatCurrency(financeMetrics.totalBalance)}
+          value={formatCurrency(financeMetrics.totalBalance, financeCurrency)}
           icon={Wallet}
           trend={{ value: 5, isPositive: true }}
         />
@@ -137,7 +151,7 @@ export default function Dashboard() {
         />
         <StatCard
           title="Ahorro Mensual"
-          value={formatCurrency(financeMetrics.savings)}
+          value={formatCurrency(financeMetrics.savings, financeCurrency)}
           icon={TrendingUp}
           iconColor="text-income"
           valueClassName="text-income"
@@ -156,13 +170,13 @@ export default function Dashboard() {
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
               <span className="text-3xl font-bold text-primary">
-                {mockStepsHistory.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
+                {healthCharts.steps.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
               </span>
               <span className="text-sm text-muted-foreground">Total semanal</span>
             </div>
             <div className="h-[180px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockStepsHistory} barSize={28}>
+                <BarChart data={healthCharts.steps} barSize={28}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
                   <XAxis
                     dataKey="date"
@@ -202,7 +216,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
               <span className="text-3xl font-bold text-primary">
-                {formatCurrency(financeMetrics.monthlyIncome - financeMetrics.monthlyExpenses)}
+                {formatCurrency(financeMetrics.monthlyIncome - financeMetrics.monthlyExpenses, financeCurrency)}
               </span>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
@@ -255,7 +269,7 @@ export default function Dashboard() {
                       color: "var(--foreground)",
                     }}
                     formatter={(value: number, name: string) => [
-                      formatCurrency(value),
+                      formatCurrency(value, financeCurrency),
                       name === "income" ? "Ingresos" : "Gastos",
                     ]}
                   />
@@ -353,13 +367,13 @@ export default function Dashboard() {
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Ingresos</p>
                 <p className="mt-1 text-2xl font-bold text-success">
-                  {formatCurrency(financeMetrics.monthlyIncome)}
+                  {formatCurrency(financeMetrics.monthlyIncome, financeCurrency)}
                 </p>
               </div>
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Gastos</p>
                 <p className="mt-1 text-2xl font-bold text-destructive">
-                  {formatCurrency(financeMetrics.monthlyExpenses)}
+                  {formatCurrency(financeMetrics.monthlyExpenses, financeCurrency)}
                 </p>
               </div>
             </div>
@@ -375,19 +389,14 @@ export default function Dashboard() {
         return (
           <HealthSection
             metrics={healthMetrics}
-            chartData={{
-              steps: mockStepsHistory,
-              calories: mockCaloriesHistory,
-              heartRate: mockHeartRateHistory,
-              sleep: mockSleepHistory,
-              weight: mockWeightHistory,
-            }}
+            chartData={healthCharts}
           />
         )
       case "finance":
         return (
           <FinanceSection
             metrics={financeMetrics}
+            currency={financeCurrency}
             chartData={{
               expenses: expensesByCategory,
               income: incomeHistory,
@@ -449,13 +458,22 @@ export default function Dashboard() {
                 Exportar
               </Button>
 
-              <SettingsDialog config={config} onConfigChange={setConfig} />
+              <Button variant="outline" size="icon" className="border-border bg-card hover:bg-secondary" onClick={() => setSettingsOpen(true)}>
+                <Settings className="h-4 w-4" />
+                <span className="sr-only">Configuración</span>
+              </Button>
             </div>
           </div>
         </header>
 
         {/* Content */}
         <div className="p-6">
+          {!isUsingMockData && (
+            <div className="mb-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+              Salud: {healthStatus.isLive ? `conectado por ${healthStatus.resolvedFrom}` : "mock"}. Finanzas: {walletStatus.isLive ? `conectado por ${walletStatus.resolvedFrom}` : "mock"}.
+            </div>
+          )}
+
           {/* Mock Data Warning */}
           {isUsingMockData && (
             <div className="mb-6 flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
@@ -466,91 +484,26 @@ export default function Dashboard() {
             </div>
           )}
 
+          {error && (
+            <div className="mb-6 flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <p className="text-sm text-destructive">
+                {error}
+              </p>
+            </div>
+          )}
+
           {renderContent()}
         </div>
       </main>
 
-      {/* Settings Modal */}
-      {settingsOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-          onClick={() => setSettingsOpen(false)}
-        >
-          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-lg p-4">
-            <div className="rounded-xl border border-border bg-card p-6 shadow-xl">
-              <h2 className="text-xl font-semibold text-foreground mb-4">Configuracion de APIs</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Conecta tus APIs para obtener datos reales. Sin configuracion, se mostraran datos de ejemplo.
-              </p>
-
-              <div className="space-y-6">
-                {/* Health Connect Section */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-primary flex items-center gap-2">
-                    <Activity className="h-4 w-4" />
-                    Health Connect Gateway
-                  </h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm text-muted-foreground">URL del servidor</label>
-                      <input
-                        type="text"
-                        placeholder="https://tu-servidor-hcgateway.com"
-                        value={config.healthConnectUrl}
-                        onChange={(e) => setConfig({ ...config, healthConnectUrl: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Token de autenticacion</label>
-                      <input
-                        type="password"
-                        placeholder="Tu token de Health Connect"
-                        value={config.healthConnectToken}
-                        onChange={(e) => setConfig({ ...config, healthConnectToken: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Wallet API Section */}
-                <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-primary flex items-center gap-2">
-                    <Wallet className="h-4 w-4" />
-                    Wallet API (Budget Bakers)
-                  </h3>
-                  <div>
-                    <label className="text-sm text-muted-foreground">Token de API</label>
-                    <input
-                      type="password"
-                      placeholder="Tu token de Budget Bakers Wallet"
-                      value={config.walletApiToken}
-                      onChange={(e) => setConfig({ ...config, walletApiToken: e.target.value })}
-                      className="mt-1 w-full rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Requiere plan Premium de Budget Bakers
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setSettingsOpen(false)} className="border-border">
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={() => setSettingsOpen(false)}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  Guardar
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <SettingsDialog
+        config={config}
+        onConfigChange={setConfig}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        showTrigger={false}
+      />
     </div>
   )
 }

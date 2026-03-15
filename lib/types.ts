@@ -127,3 +127,38 @@ export interface ApiConfig {
   healthConnectToken?: string
   walletApiToken?: string
 }
+
+export interface ProviderStatus {
+  configured: boolean
+  isLive: boolean
+  resolvedFrom: 'env' | 'localStorage' | 'none'
+  message?: string
+  baseUrl?: string
+}
+
+export interface HealthChartData {
+  steps: ChartDataPoint[]
+  calories: ChartDataPoint[]
+  heartRate: ChartDataPoint[]
+  sleep: ChartDataPoint[]
+  weight: ChartDataPoint[]
+}
+
+export interface DashboardDataPayload {
+  healthMetrics: HealthMetrics
+  financeMetrics: FinanceMetrics
+  financeCurrency: string
+  healthCharts: HealthChartData
+  accounts: WalletAccount[]
+  recentTransactions: WalletRecord[]
+  incomeHistory: ChartDataPoint[]
+  expenseHistory: ChartDataPoint[]
+  expensesByCategory: ExpenseByCategory[]
+  dailySpending: ChartDataPoint[]
+  meta: {
+    health: ProviderStatus
+    wallet: ProviderStatus
+    usingMockData: boolean
+    errors: string[]
+  }
+}

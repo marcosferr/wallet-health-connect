@@ -37,6 +37,7 @@ import {
 
 interface FinanceSectionProps {
   metrics: FinanceMetrics
+  currency?: string
   chartData: {
     expenses: ExpenseByCategory[]
     income: ChartDataPoint[]
@@ -79,18 +80,28 @@ const getAccountIcon = (type: string) => {
   }
 }
 
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value)
+const formatCurrency = (value: number, currency = "EUR") => {
+  const normalizedCurrency = currency.toUpperCase()
+  const locale = normalizedCurrency === "PYG" ? "es-PY" : "es-ES"
+
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: normalizedCurrency,
+    currencyDisplay: normalizedCurrency === "PYG" ? "narrowSymbol" : "symbol",
+    minimumFractionDigits: normalizedCurrency === "PYG" ? 0 : 2,
+    maximumFractionDigits: normalizedCurrency === "PYG" ? 0 : 2,
+  }).format(value)
+}
 
 // Custom tooltip for the area chart
-const FinanceTooltip = ({ active, payload, label }: any) => {
+const FinanceTooltip = ({ active, payload, label, currency = "EUR" }: any) => {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-md">
       <p className="mb-1 text-xs text-muted-foreground">{label}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} className="font-medium" style={{ color: p.color }}>
-          {p.dataKey === "income" ? "Ingresos" : "Gastos"}: {formatCurrency(p.value)}
+          {p.dataKey === "income" ? "Ingresos" : "Gastos"}: {formatCurrency(p.value, currency)}
         </p>
       ))}
     </div>
@@ -99,6 +110,7 @@ const FinanceTooltip = ({ active, payload, label }: any) => {
 
 export function FinanceSection({
   metrics,
+  currency = "EUR",
   chartData,
   accounts,
   recentTransactions,
@@ -125,7 +137,7 @@ export function FinanceSection({
               <Wallet className="h-5 w-5" style={{ color: "#00d4ff" }} />
             </div>
             <p className="mt-3 text-3xl font-bold" style={{ color: "#00d4ff" }}>
-              {formatCurrency(metrics.totalBalance)}
+              {formatCurrency(metrics.totalBalance, currency)}
             </p>
             <p className="mt-1 text-sm text-income">+12% este mes</p>
           </CardContent>
@@ -139,7 +151,7 @@ export function FinanceSection({
               <TrendingUp className="h-5 w-5 text-income" />
             </div>
             <p className="mt-3 text-3xl font-bold text-income">
-              {formatCurrency(metrics.monthlyIncome)}
+              {formatCurrency(metrics.monthlyIncome, currency)}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">Este mes</p>
           </CardContent>
@@ -153,7 +165,7 @@ export function FinanceSection({
               <TrendingDown className="h-5 w-5 text-expense" />
             </div>
             <p className="mt-3 text-3xl font-bold text-expense">
-              {formatCurrency(metrics.monthlyExpenses)}
+              {formatCurrency(metrics.monthlyExpenses, currency)}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">Este mes</p>
           </CardContent>
@@ -167,7 +179,7 @@ export function FinanceSection({
               <PiggyBank className="h-5 w-5 text-income" />
             </div>
             <p className="mt-3 text-3xl font-bold text-income">
-              {formatCurrency(metrics.savings)}
+              {formatCurrency(metrics.savings, currency)}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">{savingsRate}% de ingresos</p>
           </CardContent>
@@ -212,7 +224,7 @@ export function FinanceSection({
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip content={<FinanceTooltip />} />
+                  <Tooltip content={<FinanceTooltip currency={currency} />} />
                   <Area type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={2.5} fill="url(#incomeGradFin)" />
                   <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2.5} fill="url(#expenseGradFin)" />
                 </AreaChart>
@@ -229,7 +241,7 @@ export function FinanceSection({
                 Gastos por Categoria
               </CardTitle>
               <span className="text-lg font-bold text-expense">
-                {formatCurrency(metrics.monthlyExpenses)}
+                {formatCurrency(metrics.monthlyExpenses, currency)}
               </span>
             </div>
           </CardHeader>
@@ -245,7 +257,7 @@ export function FinanceSection({
                     </Pie>
                     <Tooltip
                       contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--foreground)" }}
-                      formatter={(value: number) => [formatCurrency(value), "Gasto"]}
+                      formatter={(value: number) => [formatCurrency(value, currency), "Gasto"]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -262,7 +274,7 @@ export function FinanceSection({
                         </div>
                         <span className="text-muted-foreground">{cat.category}</span>
                       </div>
-                      <span className="font-bold" style={{ color }}>{formatCurrency(cat.amount)}</span>
+                      <span className="font-bold" style={{ color }}>{formatCurrency(cat.amount, currency)}</span>
                     </div>
                   )
                 })}
@@ -316,7 +328,7 @@ export function FinanceSection({
                       </div>
                     </div>
                     <span className="text-lg font-bold" style={{ color: "#00d4ff" }}>
-                      {formatCurrency(account.balance)}
+                      {formatCurrency(account.balance, account.currency)}
                     </span>
                   </div>
                 )
@@ -359,7 +371,7 @@ export function FinanceSection({
                     style={{ color: tx.type === "income" ? "#22c55e" : "#ef4444" }}
                   >
                     {tx.type === "income" ? "+" : "-"}
-                    {formatCurrency(Math.abs(tx.amount))}
+                    {formatCurrency(Math.abs(tx.amount), tx.currency)}
                   </span>
                 </div>
               ))}
