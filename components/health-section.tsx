@@ -2,7 +2,8 @@
 
 import { Activity, Heart, Moon, Flame, Scale, MapPin } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MetricCard } from "./metric-card"
+import { StatCard } from "./stat-card"
+import { ScoreRing } from "./score-ring"
 import type { HealthMetrics, ChartDataPoint } from "@/lib/types"
 import {
   Area,
@@ -15,6 +16,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  CartesianGrid,
 } from "recharts"
 
 interface HealthSectionProps {
@@ -30,212 +32,274 @@ interface HealthSectionProps {
 }
 
 export function HealthSection({ metrics, chartData, isLoading }: HealthSectionProps) {
+  const stepsPercent = Math.round((metrics.steps / metrics.stepsGoal) * 100)
+  const caloriesPercent = Math.round((metrics.calories / metrics.caloriesGoal) * 100)
+  const sleepPercent = Math.round((metrics.sleep / metrics.sleepGoal) * 100)
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Activity className="h-5 w-5 text-primary" />
-        <h2 className="text-lg font-semibold text-foreground">Salud y Fitness</h2>
-      </div>
-
-      {/* Main Metrics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <MetricCard
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
           title="Pasos"
           value={metrics.steps.toLocaleString()}
-          icon={<Activity className="h-4 w-4" />}
-          progress={{ current: metrics.steps, max: metrics.stepsGoal }}
-          accentColor="primary"
+          subtitle={`Meta: ${metrics.stepsGoal.toLocaleString()}`}
+          icon={Activity}
         />
-        <MetricCard
-          title="Calorías"
+        <StatCard
+          title="Calorias"
           value={metrics.calories.toLocaleString()}
-          subtitle="kcal"
-          icon={<Flame className="h-4 w-4" />}
-          progress={{ current: metrics.calories, max: metrics.caloriesGoal }}
-          accentColor="var(--accent)"
+          subtitle={`Meta: ${metrics.caloriesGoal.toLocaleString()} kcal`}
+          icon={Flame}
         />
-        <MetricCard
-          title="Frecuencia cardíaca"
-          value={metrics.heartRate}
-          subtitle="bpm"
-          icon={<Heart className="h-4 w-4" />}
-          trend={{ value: -2, label: "vs ayer" }}
+        <StatCard
+          title="Ritmo Cardiaco"
+          value={`${metrics.heartRate}`}
+          subtitle="BPM promedio"
+          icon={Heart}
+          iconColor="text-destructive"
         />
-        <MetricCard
-          title="Sueño"
+        <StatCard
+          title="Horas de Sueno"
           value={metrics.sleep.toFixed(1)}
-          subtitle="horas"
-          icon={<Moon className="h-4 w-4" />}
-          progress={{ current: metrics.sleep, max: metrics.sleepGoal }}
-          accentColor="var(--chart-3)"
-        />
-        <MetricCard
-          title="Distancia"
-          value={metrics.distance.toFixed(1)}
-          subtitle="km"
-          icon={<MapPin className="h-4 w-4" />}
-          trend={{ value: 12, label: "vs ayer" }}
-        />
-        <MetricCard
-          title="Peso"
-          value={metrics.weight.toFixed(1)}
-          subtitle="kg"
-          icon={<Scale className="h-4 w-4" />}
-          trend={{ value: -0.5, label: "esta semana" }}
+          subtitle={`Meta: ${metrics.sleepGoal}h`}
+          icon={Moon}
         />
       </div>
 
-      {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* Steps Chart */}
-        <Card className="bg-card border-border">
+      {/* Charts Row */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Steps Bar Chart */}
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Activity className="h-4 w-4 text-primary" />
-              Pasos - Últimos 7 días
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Pasos Semanales
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData.steps}>
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                />
-                <YAxis hide />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--foreground)",
-                  }}
-                  formatter={(value: number) => [value.toLocaleString(), "Pasos"]}
-                />
-                <Bar dataKey="value" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.steps} barSize={24}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#252b3d",
+                      border: "1px solid #3d4559",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
+                    formatter={(value: number) => [value.toLocaleString(), "Pasos"]}
+                  />
+                  <Bar dataKey="value" fill="#00d4ff" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Heart Rate Chart */}
-        <Card className="bg-card border-border">
+        {/* Heart Rate Area Chart */}
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Heart className="h-4 w-4 text-destructive" />
-              Frecuencia cardíaca - Hoy
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Ritmo Cardiaco (24h)
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={chartData.heartRate}>
-                <defs>
-                  <linearGradient id="heartGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--destructive)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--destructive)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                  interval={5}
-                />
-                <YAxis hide domain={[50, 120]} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--foreground)",
-                  }}
-                  formatter={(value: number) => [value, "bpm"]}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="var(--destructive)"
-                  strokeWidth={2}
-                  fill="url(#heartGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData.heartRate}>
+                  <defs>
+                    <linearGradient id="heartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    interval={3}
+                  />
+                  <YAxis
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    domain={[50, 110]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#252b3d",
+                      border: "1px solid #3d4559",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
+                    formatter={(value: number) => [`${value} BPM`, "Ritmo"]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#00d4ff"
+                    strokeWidth={2}
+                    fill="url(#heartGradient)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Score Rings Row */}
+      <Card className="border-border bg-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Progreso Diario
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center justify-around gap-6 py-4">
+            <ScoreRing
+              value={stepsPercent}
+              label="Pasos"
+              size={90}
+              strokeWidth={6}
+            />
+            <ScoreRing
+              value={caloriesPercent}
+              label="Calorias"
+              size={90}
+              strokeWidth={6}
+            />
+            <ScoreRing
+              value={sleepPercent}
+              label="Sueno"
+              size={90}
+              strokeWidth={6}
+            />
+            <ScoreRing
+              value={metrics.activeMinutes}
+              maxValue={60}
+              label="Activo"
+              size={90}
+              strokeWidth={6}
+            />
+            <ScoreRing
+              value={Math.round(metrics.distance * 10)}
+              maxValue={100}
+              label="Distancia"
+              size={90}
+              strokeWidth={6}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sleep and Weight Charts */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Sleep Bar Chart */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Historial de Sueno
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.sleep} barSize={20}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    domain={[0, 10]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#252b3d",
+                      border: "1px solid #3d4559",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
+                    formatter={(value: number) => [`${value}h`, "Sueno"]}
+                  />
+                  <Bar dataKey="value" fill="#00d4ff" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Sleep Chart */}
-        <Card className="bg-card border-border">
+        {/* Weight Line Chart */}
+        <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Moon className="h-4 w-4 text-info" />
-              Sueño - Últimos 7 días
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Evolucion del Peso
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Scale className="h-4 w-4 text-primary" />
+                <span className="text-lg font-bold text-primary">{metrics.weight} kg</span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData.sleep}>
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                />
-                <YAxis hide domain={[0, 10]} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--foreground)",
-                  }}
-                  formatter={(value: number) => [`${value} h`, "Sueño"]}
-                />
-                <Bar dataKey="value" fill="var(--chart-3)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        {/* Weight Chart */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              <Scale className="h-4 w-4 text-warning" />
-              Peso - Último mes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={chartData.weight}>
-                <XAxis
-                  dataKey="date"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                  interval={6}
-                />
-                <YAxis hide domain={["dataMin - 1", "dataMax + 1"]} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    color: "var(--foreground)",
-                  }}
-                  formatter={(value: number) => [`${value} kg`, "Peso"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="var(--chart-4)"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData.weight}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    interval={6}
+                  />
+                  <YAxis
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    domain={["dataMin - 1", "dataMax + 1"]}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#252b3d",
+                      border: "1px solid #3d4559",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
+                    formatter={(value: number) => [`${value} kg`, "Peso"]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#00d4ff"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>

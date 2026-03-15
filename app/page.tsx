@@ -1,17 +1,52 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AppSidebar } from "@/components/app-sidebar"
-import { VitalScoreCard } from "@/components/vital-score-card"
+import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { StatCard } from "@/components/stat-card"
-import { EvolutionChart } from "@/components/evolution-chart"
-import { BalanceRadarChart } from "@/components/balance-radar-chart"
-import { HealthOverview } from "@/components/health-overview"
-import { FinanceOverview } from "@/components/finance-overview"
+import { ScoreRing } from "@/components/score-ring"
+import { HealthSection } from "@/components/health-section"
+import { FinanceSection } from "@/components/finance-section"
 import { SettingsDialog } from "@/components/settings-dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Activity,
+  Wallet,
+  Heart,
+  Moon,
+  TrendingUp,
+  TrendingDown,
+  AlertCircle,
+  Download,
+  Calendar,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Clock, CheckSquare, Target, Download, AlertCircle, LayoutGrid } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  mockHealthMetrics,
+  mockFinanceMetrics,
+  mockStepsHistory,
+  mockCaloriesHistory,
+  mockHeartRateHistory,
+  mockSleepHistory,
+  mockWeightHistory,
+  mockExpensesByCategory,
+  mockIncomeHistory,
+  mockExpenseHistory,
+  mockDailySpending,
+  mockAccounts,
+  mockRecentTransactions,
+} from "@/lib/mock-data"
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from "recharts"
 
 interface ApiConfig {
   healthConnectUrl: string
@@ -19,95 +54,13 @@ interface ApiConfig {
   walletApiToken: string
 }
 
-// Mock data for the dashboard
-const mockEvolutionData = [
-  { day: "Lun", foco: 65, energia: 45, sistema: 70 },
-  { day: "Mar", foco: 70, energia: 55, sistema: 65 },
-  { day: "Mié", foco: 68, energia: 60, sistema: 55 },
-  { day: "Jue", foco: 55, energia: 45, sistema: 50 },
-  { day: "Vie", foco: 50, energia: 40, sistema: 45 },
-  { day: "Sáb", foco: 60, energia: 55, sistema: 65 },
-  { day: "Dom", foco: 72, energia: 65, sistema: 55 },
-]
-
-const mockBalanceData = [
-  { subject: "Foco", value: 65, fullMark: 100 },
-  { subject: "Salud", value: 78, fullMark: 100 },
-  { subject: "Disciplina", value: 55, fullMark: 100 },
-  { subject: "Metas", value: 70, fullMark: 100 },
-  { subject: "Bienestar", value: 60, fullMark: 100 },
-]
-
-const mockHealthSummary = {
-  steps: 8432,
-  stepsGoal: 10000,
-  calories: 1850,
-  caloriesGoal: 2200,
-  heartRate: 72,
-  sleep: 7.2,
-  sleepGoal: 8,
-  weight: 75.5,
-}
-
-const mockWeeklySteps = [
-  { day: "Lun", steps: 9200 },
-  { day: "Mar", steps: 7800 },
-  { day: "Mié", steps: 10500 },
-  { day: "Jue", steps: 6400 },
-  { day: "Vie", steps: 8900 },
-  { day: "Sáb", steps: 12000 },
-  { day: "Dom", steps: 8432 },
-]
-
-const mockSleepData = [
-  { day: "Lun", hours: 7.5 },
-  { day: "Mar", hours: 6.8 },
-  { day: "Mié", hours: 8.2 },
-  { day: "Jue", hours: 6.0 },
-  { day: "Vie", hours: 7.0 },
-  { day: "Sáb", hours: 8.5 },
-  { day: "Dom", hours: 7.2 },
-]
-
-const mockHeartRateData = [
-  { time: "6am", bpm: 62 },
-  { time: "9am", bpm: 75 },
-  { time: "12pm", bpm: 85 },
-  { time: "3pm", bpm: 78 },
-  { time: "6pm", bpm: 90 },
-  { time: "9pm", bpm: 68 },
-]
-
-const mockFinanceSummary = {
-  balance: 125000,
-  income: 45000,
-  expenses: 32000,
-  savings: 13000,
-}
-
-const mockMonthlyFinance = [
-  { month: "Oct", ingresos: 42000, gastos: 28000 },
-  { month: "Nov", ingresos: 44000, gastos: 31000 },
-  { month: "Dic", ingresos: 52000, gastos: 38000 },
-  { month: "Ene", ingresos: 43000, gastos: 29000 },
-  { month: "Feb", ingresos: 45000, gastos: 30000 },
-  { month: "Mar", ingresos: 45000, gastos: 32000 },
-]
-
-const mockExpenseCategories = [
-  { name: "Vivienda", value: 12000, color: "#00d4aa" },
-  { name: "Alimentación", value: 6500, color: "#8b5cf6" },
-  { name: "Transporte", value: 4500, color: "#22c55e" },
-  { name: "Entretenimiento", value: 3500, color: "#f59e0b" },
-  { name: "Otros", value: 5500, color: "#ec4899" },
-]
-
 type TimePeriod = "today" | "week" | "month"
 
-export default function LifeOSDashboard() {
-  const [activeSection, setActiveSection] = useState("resumen")
+export default function Dashboard() {
+  const [activeSection, setActiveSection] = useState<"overview" | "health" | "finance">("overview")
   const [timePeriod, setTimePeriod] = useState<TimePeriod>("week")
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [config, setConfig] = useState<ApiConfig>({
     healthConnectUrl: "",
     healthConnectToken: "",
@@ -128,175 +81,354 @@ export default function LifeOSDashboard() {
       weekday: "long",
       day: "numeric",
       month: "long",
+      year: "numeric",
     }
     const date = new Date().toLocaleDateString("es-ES", options)
     setCurrentDate(date.charAt(0).toUpperCase() + date.slice(1))
   }, [])
 
-  const getVitalScore = () => {
-    const stepsScore = Math.min((mockHealthSummary.steps / mockHealthSummary.stepsGoal) * 30, 30)
-    const sleepScore = Math.min((mockHealthSummary.sleep / mockHealthSummary.sleepGoal) * 30, 30)
-    const activityScore = 20
-    const financeScore = Math.min((mockFinanceSummary.savings / mockFinanceSummary.income) * 20 * 5, 20)
-    return Math.round(stepsScore + sleepScore + activityScore + financeScore)
-  }
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value)
 
-  const vitalScore = getVitalScore()
-  const vitalStatus = vitalScore >= 70 ? "good" : vitalScore >= 50 ? "attention" : "critical"
+  // Calculate scores
+  const stepsScore = Math.min((mockHealthMetrics.steps / mockHealthMetrics.stepsGoal) * 100, 100)
+  const sleepScore = Math.min((mockHealthMetrics.sleep / mockHealthMetrics.sleepGoal) * 100, 100)
+  const savingsScore = Math.min((mockFinanceMetrics.savings / mockFinanceMetrics.monthlyIncome) * 100 * 2, 100)
+  const healthScore = Math.round((stepsScore + sleepScore) / 2)
+  const financeScore = Math.round(savingsScore)
 
-  const handleConfigSave = (newConfig: ApiConfig) => {
-    setConfig(newConfig)
-    setSettingsOpen(false)
-  }
+  const renderOverview = () => (
+    <div className="space-y-6">
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          title="Pasos Hoy"
+          value={mockHealthMetrics.steps.toLocaleString()}
+          subtitle={`Meta: ${mockHealthMetrics.stepsGoal.toLocaleString()}`}
+          icon={Activity}
+        />
+        <StatCard
+          title="Balance Total"
+          value={formatCurrency(mockFinanceMetrics.totalBalance)}
+          icon={Wallet}
+          trend={{ value: 5, isPositive: true }}
+        />
+        <StatCard
+          title="Ritmo Cardiaco"
+          value={`${mockHealthMetrics.heartRate} BPM`}
+          icon={Heart}
+          iconColor="text-destructive"
+        />
+        <StatCard
+          title="Ahorro Mensual"
+          value={formatCurrency(mockFinanceMetrics.savings)}
+          icon={TrendingUp}
+          iconColor="text-success"
+        />
+      </div>
+
+      {/* Charts Row */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Steps Chart */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Pasos Semanales
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-3xl font-bold text-primary">
+                {mockStepsHistory.reduce((sum, d) => sum + d.value, 0).toLocaleString()}
+              </span>
+              <span className="text-sm text-muted-foreground">Total semanal</span>
+            </div>
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={mockStepsHistory} barSize={28}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#252b3d",
+                      border: "1px solid #3d4559",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
+                    formatter={(value: number) => [value.toLocaleString(), "Pasos"]}
+                  />
+                  <Bar dataKey="value" fill="#00d4ff" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Finance Chart */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+              Ingresos vs Gastos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-3xl font-bold text-primary">
+                {formatCurrency(mockFinanceMetrics.monthlyIncome - mockFinanceMetrics.monthlyExpenses)}
+              </span>
+              <span className="text-sm text-muted-foreground">Balance mensual</span>
+            </div>
+            <div className="h-[180px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={mockIncomeHistory.map((inc, i) => ({
+                    date: inc.date,
+                    income: inc.value,
+                    expenses: mockExpenseHistory[i]?.value || 0,
+                  }))}
+                >
+                  <defs>
+                    <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fill: "#8892a6", fontSize: 11 }}
+                    axisLine={{ stroke: "#3d4559" }}
+                    tickLine={false}
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "#252b3d",
+                      border: "1px solid #3d4559",
+                      borderRadius: "8px",
+                      color: "#fff",
+                    }}
+                    formatter={(value: number, name: string) => [
+                      formatCurrency(value),
+                      name === "income" ? "Ingresos" : "Gastos",
+                    ]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="income"
+                    stroke="#00d4ff"
+                    strokeWidth={2}
+                    fill="url(#incomeGrad)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="expenses"
+                    stroke="#00a8cc"
+                    strokeWidth={2}
+                    fill="transparent"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-[#00d4ff]" />
+                <span className="text-xs text-muted-foreground">Ingresos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full bg-[#00a8cc]" />
+                <span className="text-xs text-muted-foreground">Gastos</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Score Rings */}
+      <Card className="border-border bg-card">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+            Indicadores Principales
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center justify-around gap-6 py-4">
+            <ScoreRing
+              value={healthScore}
+              label="Salud"
+              size={100}
+              strokeWidth={8}
+            />
+            <ScoreRing
+              value={financeScore}
+              label="Finanzas"
+              size={100}
+              strokeWidth={8}
+            />
+            <ScoreRing
+              value={Math.round(stepsScore)}
+              label="Pasos"
+              size={100}
+              strokeWidth={8}
+            />
+            <ScoreRing
+              value={Math.round(sleepScore)}
+              label="Sueno"
+              size={100}
+              strokeWidth={8}
+            />
+            <ScoreRing
+              value={Math.round((mockFinanceMetrics.budgetUsed / mockFinanceMetrics.budgetTotal) * 100)}
+              label="Presupuesto"
+              size={100}
+              strokeWidth={8}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Stats Row */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Health Quick Stats */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Resumen de Salud
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-lg bg-secondary/50 p-4">
+                <p className="text-xs text-muted-foreground">Calorias</p>
+                <p className="mt-1 text-2xl font-bold text-primary">
+                  {mockHealthMetrics.calories.toLocaleString()}
+                </p>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{
+                      width: `${Math.min((mockHealthMetrics.calories / mockHealthMetrics.caloriesGoal) * 100, 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="rounded-lg bg-secondary/50 p-4">
+                <p className="text-xs text-muted-foreground">Sueno</p>
+                <p className="mt-1 text-2xl font-bold text-primary">{mockHealthMetrics.sleep}h</p>
+                <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{
+                      width: `${Math.min((mockHealthMetrics.sleep / mockHealthMetrics.sleepGoal) * 100, 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Finance Quick Stats */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Resumen Financiero
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-lg bg-secondary/50 p-4">
+                <p className="text-xs text-muted-foreground">Ingresos</p>
+                <p className="mt-1 text-2xl font-bold text-success">
+                  {formatCurrency(mockFinanceMetrics.monthlyIncome)}
+                </p>
+              </div>
+              <div className="rounded-lg bg-secondary/50 p-4">
+                <p className="text-xs text-muted-foreground">Gastos</p>
+                <p className="mt-1 text-2xl font-bold text-destructive">
+                  {formatCurrency(mockFinanceMetrics.monthlyExpenses)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
 
   const renderContent = () => {
     switch (activeSection) {
-      case "salud":
+      case "health":
         return (
-          <HealthOverview
-            weeklySteps={mockWeeklySteps}
-            sleepData={mockSleepData}
-            heartRateData={mockHeartRateData}
-            summary={mockHealthSummary}
+          <HealthSection
+            metrics={mockHealthMetrics}
+            chartData={{
+              steps: mockStepsHistory,
+              calories: mockCaloriesHistory,
+              heartRate: mockHeartRateHistory,
+              sleep: mockSleepHistory,
+              weight: mockWeightHistory,
+            }}
           />
         )
-      case "finanzas":
+      case "finance":
         return (
-          <FinanceOverview
-            monthlyData={mockMonthlyFinance}
-            expenseCategories={mockExpenseCategories}
-            summary={mockFinanceSummary}
+          <FinanceSection
+            metrics={mockFinanceMetrics}
+            chartData={{
+              expenses: mockExpensesByCategory,
+              income: mockIncomeHistory,
+              expenseHistory: mockExpenseHistory,
+              dailySpending: mockDailySpending,
+            }}
+            accounts={mockAccounts}
+            recentTransactions={mockRecentTransactions}
           />
         )
       default:
-        return (
-          <div className="space-y-6">
-            {/* Top Row - Vital Score + Stats */}
-            <div className="grid gap-4 lg:grid-cols-4">
-              <div className="lg:col-span-2">
-                <VitalScoreCard
-                  score={vitalScore}
-                  status={vitalStatus}
-                  message="Empieza marcando tus habitos y abriendo una sesion de foco."
-                />
-              </div>
-              <StatCard
-                title="Foco esta semana"
-                value="8.6h"
-                subtitle="- Faltan 19.4h"
-                icon={Clock}
-                iconColor="text-primary"
-              />
-              <StatCard
-                title="Habitos esta semana"
-                value="30/56"
-                subtitle="- Tasa: 54%"
-                icon={CheckSquare}
-                iconColor="text-accent"
-              />
-            </div>
-
-            {/* Second Stats Row */}
-            <div className="grid gap-4 lg:grid-cols-4">
-              <div className="lg:col-span-2" />
-              <StatCard
-                title="Progreso metas"
-                value="55%"
-                subtitle="- 4 activas"
-                icon={Target}
-                iconColor="text-chart-3"
-              />
-              <StatCard
-                title="Balance financiero"
-                value="$125k"
-                subtitle="+$13k este mes"
-                icon={LayoutGrid}
-                iconColor="text-warning"
-              />
-            </div>
-
-            {/* Charts Row */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <EvolutionChart data={mockEvolutionData} />
-              </div>
-              <BalanceRadarChart data={mockBalanceData} />
-            </div>
-
-            {/* Quick Health & Finance Overview */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Resumen de Salud</h3>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <p className="text-xs text-muted-foreground">Pasos hoy</p>
-                    <p className="mt-1 text-2xl font-bold text-foreground">
-                      {mockHealthSummary.steps.toLocaleString()}
-                    </p>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                      <div
-                        className="h-full rounded-full bg-primary"
-                        style={{
-                          width: `${Math.min((mockHealthSummary.steps / mockHealthSummary.stepsGoal) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <p className="text-xs text-muted-foreground">Sueno anoche</p>
-                    <p className="mt-1 text-2xl font-bold text-foreground">{mockHealthSummary.sleep}h</p>
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                      <div
-                        className="h-full rounded-full bg-accent"
-                        style={{
-                          width: `${Math.min((mockHealthSummary.sleep / mockHealthSummary.sleepGoal) * 100, 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground">Resumen Financiero</h3>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <p className="text-xs text-muted-foreground">Ingresos del mes</p>
-                    <p className="mt-1 text-2xl font-bold text-chart-3">
-                      ${mockFinanceSummary.income.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <p className="text-xs text-muted-foreground">Gastos del mes</p>
-                    <p className="mt-1 text-2xl font-bold text-destructive">
-                      ${mockFinanceSummary.expenses.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
+        return renderOverview()
     }
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <AppSidebar
+      <DashboardSidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
         onSettingsClick={() => setSettingsOpen(true)}
       />
 
       {/* Main Content */}
-      <main className="pl-64">
+      <main className="pl-56 transition-all duration-300">
         {/* Header */}
         <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-16 items-center justify-between px-6">
             <div className="flex items-center gap-4">
-              <LayoutGrid className="h-5 w-5 text-muted-foreground" />
               <div>
                 <h1 className="text-xl font-semibold text-foreground">
-                  {greeting}, Carlos
+                  {activeSection === "overview" ? "Dashboard" : activeSection === "health" ? "Salud y Fitness" : "Finanzas"}
                 </h1>
                 <p className="text-sm text-muted-foreground">{currentDate}</p>
               </div>
@@ -312,7 +444,7 @@ export default function LifeOSDashboard() {
                     className={cn(
                       "rounded-md px-3 py-1.5 text-sm font-medium transition-all",
                       timePeriod === period
-                        ? "bg-secondary text-foreground"
+                        ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
@@ -338,7 +470,7 @@ export default function LifeOSDashboard() {
             <div className="mb-6 flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
               <AlertCircle className="h-5 w-5 text-warning" />
               <p className="text-sm text-warning">
-                Mostrando datos de demostracion. Configura tus APIs para ver datos reales.
+                Mostrando datos de demostracion. Configura tus APIs en ajustes para ver datos reales.
               </p>
             </div>
           )}
@@ -347,7 +479,7 @@ export default function LifeOSDashboard() {
         </div>
       </main>
 
-      {/* Settings Modal when opened from sidebar */}
+      {/* Settings Modal */}
       {settingsOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
@@ -363,7 +495,10 @@ export default function LifeOSDashboard() {
               <div className="space-y-6">
                 {/* Health Connect Section */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-primary">Health Connect Gateway</h3>
+                  <h3 className="text-sm font-medium text-primary flex items-center gap-2">
+                    <Activity className="h-4 w-4" />
+                    Health Connect Gateway
+                  </h3>
                   <div className="space-y-3">
                     <div>
                       <label className="text-sm text-muted-foreground">URL del servidor</label>
@@ -390,7 +525,10 @@ export default function LifeOSDashboard() {
 
                 {/* Wallet API Section */}
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-accent">Wallet API (Budget Bakers)</h3>
+                  <h3 className="text-sm font-medium text-primary flex items-center gap-2">
+                    <Wallet className="h-4 w-4" />
+                    Wallet API (Budget Bakers)
+                  </h3>
                   <div>
                     <label className="text-sm text-muted-foreground">Token de API</label>
                     <input
@@ -411,7 +549,10 @@ export default function LifeOSDashboard() {
                 <Button variant="outline" onClick={() => setSettingsOpen(false)} className="border-border">
                   Cancelar
                 </Button>
-                <Button onClick={() => handleConfigSave(config)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button
+                  onClick={() => setSettingsOpen(false)}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
                   Guardar
                 </Button>
               </div>
