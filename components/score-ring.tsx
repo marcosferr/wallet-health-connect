@@ -6,6 +6,7 @@ interface ScoreRingProps {
   label: string
   size?: number
   strokeWidth?: number
+  color?: string
 }
 
 export function ScoreRing({
@@ -14,6 +15,7 @@ export function ScoreRing({
   label,
   size = 100,
   strokeWidth = 8,
+  color = "#00d4ff",
 }: ScoreRingProps) {
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
@@ -30,33 +32,31 @@ export function ScoreRing({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="currentColor"
+            stroke={color}
             strokeWidth={strokeWidth}
-            className="text-muted/50"
+            opacity={0.15}
           />
         </svg>
         {/* Progress circle */}
-        <svg
-          className="absolute -rotate-90"
-          width={size}
-          height={size}
-        >
+        <svg className="absolute -rotate-90" width={size} height={size}>
           <circle
             cx={size / 2}
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="currentColor"
+            stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
-            className="text-primary transition-all duration-500"
+            style={{ transition: "stroke-dashoffset 0.5s ease" }}
           />
         </svg>
         {/* Center value */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold text-primary">{Math.round(value)}</span>
+          <span className="text-2xl font-bold" style={{ color }}>
+            {Math.round(value)}
+          </span>
         </div>
       </div>
       <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

@@ -10,9 +10,14 @@ import {
   Building2,
   Banknote,
   CreditCard,
+  ShoppingCart,
+  Home,
+  Car,
+  Utensils,
+  Zap,
+  Heart,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatCard } from "./stat-card"
 import { ScoreRing } from "./score-ring"
 import type { FinanceMetrics, ChartDataPoint, ExpenseByCategory, WalletRecord, WalletAccount } from "@/lib/types"
 import {
@@ -43,22 +48,53 @@ interface FinanceSectionProps {
   isLoading?: boolean
 }
 
-const COLORS = ["#00d4ff", "#00a8cc", "#0088a8", "#66e5ff", "#00b8d9", "#005f7a"]
+// Vibrant, distinct colors per expense category
+const CATEGORY_COLORS = [
+  "#f97316", // orange  — Alimentación
+  "#ef4444", // red     — Vivienda
+  "#a78bfa", // purple  — Transporte
+  "#22c55e", // green   — Entretenimiento
+  "#00d4ff", // cyan    — Salud
+  "#f59e0b", // amber   — Servicios
+  "#ec4899", // pink    — Ropa
+  "#34d399", // teal    — Otros
+]
+
+const getCategoryIcon = (category: string) => {
+  const lower = category.toLowerCase()
+  if (lower.includes("aliment") || lower.includes("comida") || lower.includes("restaur")) return Utensils
+  if (lower.includes("vivien") || lower.includes("alquil") || lower.includes("casa")) return Home
+  if (lower.includes("transp") || lower.includes("coche") || lower.includes("gasolina")) return Car
+  if (lower.includes("salud") || lower.includes("médic") || lower.includes("farmac")) return Heart
+  if (lower.includes("luz") || lower.includes("gas") || lower.includes("servic")) return Zap
+  return ShoppingCart
+}
+
+const getAccountIcon = (type: string) => {
+  switch (type) {
+    case "bank": return Building2
+    case "savings": return PiggyBank
+    case "cash": return Banknote
+    default: return CreditCard
+  }
+}
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value)
 
-const getAccountIcon = (type: string) => {
-  switch (type) {
-    case "bank":
-      return Building2
-    case "savings":
-      return PiggyBank
-    case "cash":
-      return Banknote
-    default:
-      return CreditCard
-  }
+// Custom tooltip for the area chart
+const FinanceTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-2 text-sm shadow-md">
+      <p className="mb-1 text-xs text-muted-foreground">{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} className="font-medium" style={{ color: p.color }}>
+          {p.dataKey === "income" ? "Ingresos" : "Gastos"}: {formatCurrency(p.value)}
+        </p>
+      ))}
+    </div>
+  )
 }
 
 export function FinanceSection({
@@ -81,106 +117,106 @@ export function FinanceSection({
     <div className="space-y-6">
       {/* Top Stats Row */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          title="Balance Total"
-          value={formatCurrency(metrics.totalBalance)}
-          icon={Wallet}
-          trend={{ value: 12, isPositive: true }}
-        />
-        <StatCard
-          title="Ingresos Mensuales"
-          value={formatCurrency(metrics.monthlyIncome)}
-          icon={TrendingUp}
-          iconColor="text-success"
-        />
-        <StatCard
-          title="Gastos Mensuales"
-          value={formatCurrency(metrics.monthlyExpenses)}
-          icon={TrendingDown}
-          iconColor="text-destructive"
-        />
-        <StatCard
-          title="Ahorro Mensual"
-          value={formatCurrency(metrics.savings)}
-          icon={PiggyBank}
-          subtitle={`${savingsRate}% de tus ingresos`}
-        />
+        {/* Balance */}
+        <Card className="border-border bg-card">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Balance Total</p>
+              <Wallet className="h-5 w-5" style={{ color: "#00d4ff" }} />
+            </div>
+            <p className="mt-3 text-3xl font-bold" style={{ color: "#00d4ff" }}>
+              {formatCurrency(metrics.totalBalance)}
+            </p>
+            <p className="mt-1 text-sm text-income">+12% este mes</p>
+          </CardContent>
+        </Card>
+
+        {/* Ingresos — green */}
+        <Card className="border-border bg-card" style={{ borderLeftWidth: 3, borderLeftColor: "#22c55e" }}>
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Ingresos</p>
+              <TrendingUp className="h-5 w-5 text-income" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-income">
+              {formatCurrency(metrics.monthlyIncome)}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Este mes</p>
+          </CardContent>
+        </Card>
+
+        {/* Gastos — red */}
+        <Card className="border-border bg-card" style={{ borderLeftWidth: 3, borderLeftColor: "#ef4444" }}>
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Gastos</p>
+              <TrendingDown className="h-5 w-5 text-expense" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-expense">
+              {formatCurrency(metrics.monthlyExpenses)}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">Este mes</p>
+          </CardContent>
+        </Card>
+
+        {/* Ahorro */}
+        <Card className="border-border bg-card">
+          <CardContent className="p-5">
+            <div className="flex items-start justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Ahorro</p>
+              <PiggyBank className="h-5 w-5 text-income" />
+            </div>
+            <p className="mt-3 text-3xl font-bold text-income">
+              {formatCurrency(metrics.savings)}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{savingsRate}% de ingresos</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts Row */}
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Income vs Expenses Chart */}
+        {/* Income vs Expenses Chart — green vs red */}
         <Card className="border-border bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
-              Ingresos vs Gastos
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+                Ingresos vs Gastos
+              </CardTitle>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-income" />
+                  <span className="text-xs text-income font-medium">Ingresos</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-expense" />
+                  <span className="text-xs text-expense font-medium">Gastos</span>
+                </div>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="h-[220px]">
+            <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={combinedData}>
                   <defs>
-                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
+                    <linearGradient id="incomeGradFin" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00a8cc" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#00a8cc" stopOpacity={0} />
+                    <linearGradient id="expenseGradFin" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fill: "#8892a6", fontSize: 11 }}
-                    axisLine={{ stroke: "#3d4559" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fill: "#8892a6", fontSize: 11 }}
-                    axisLine={{ stroke: "#3d4559" }}
-                    tickLine={false}
-                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#252b3d",
-                      border: "1px solid #3d4559",
-                      borderRadius: "8px",
-                      color: "#fff",
-                    }}
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(value),
-                      name === "income" ? "Ingresos" : "Gastos",
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    stroke="#00d4ff"
-                    strokeWidth={2}
-                    fill="url(#incomeGradient)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="#00a8cc"
-                    strokeWidth={2}
-                    fill="url(#expenseGradient)"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                  <Tooltip content={<FinanceTooltip />} />
+                  <Area type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={2.5} fill="url(#incomeGradFin)" />
+                  <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2.5} fill="url(#expenseGradFin)" />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
-            <div className="mt-2 flex items-center justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-[#00d4ff]" />
-                <span className="text-xs text-muted-foreground">Ingresos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-[#00a8cc]" />
-                <span className="text-xs text-muted-foreground">Gastos</span>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -192,61 +228,51 @@ export function FinanceSection({
               <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
                 Gastos por Categoria
               </CardTitle>
-              <span className="text-lg font-bold text-primary">
+              <span className="text-lg font-bold text-expense">
                 {formatCurrency(metrics.monthlyExpenses)}
               </span>
             </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
-              <div className="h-[180px] w-[180px]">
+              <div className="h-[190px] w-[190px] shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={chartData.expenses}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="amount"
-                    >
-                      {chartData.expenses.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Pie data={chartData.expenses} cx="50%" cy="50%" innerRadius={52} outerRadius={85} paddingAngle={3} dataKey="amount">
+                      {chartData.expenses.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} stroke="transparent" />
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#252b3d",
-                        border: "1px solid #3d4559",
-                        borderRadius: "8px",
-                        color: "#fff",
-                      }}
+                      contentStyle={{ backgroundColor: "var(--card)", border: "1px solid var(--border)", borderRadius: 4, color: "var(--foreground)" }}
                       formatter={(value: number) => [formatCurrency(value), "Gasto"]}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
               <div className="flex-1 space-y-2">
-                {chartData.expenses.slice(0, 5).map((cat, index) => (
-                  <div key={cat.category} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-2.5 w-2.5 rounded-full"
-                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                      />
-                      <span className="text-muted-foreground">{cat.category}</span>
+                {chartData.expenses.slice(0, 6).map((cat, index) => {
+                  const CatIcon = getCategoryIcon(cat.category)
+                  const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length]
+                  return (
+                    <div key={cat.category} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-6 w-6 items-center justify-center rounded" style={{ backgroundColor: color + "25" }}>
+                          <CatIcon className="h-3.5 w-3.5" style={{ color }} />
+                        </div>
+                        <span className="text-muted-foreground">{cat.category}</span>
+                      </div>
+                      <span className="font-bold" style={{ color }}>{formatCurrency(cat.amount)}</span>
                     </div>
-                    <span className="font-medium text-foreground">{formatCurrency(cat.amount)}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Score Rings Section */}
+      {/* Score Rings — each with a distinct color */}
       <Card className="border-border bg-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
@@ -255,36 +281,11 @@ export function FinanceSection({
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center justify-around gap-6 py-4">
-            <ScoreRing
-              value={savingsRate}
-              label="Tasa Ahorro"
-              size={90}
-              strokeWidth={6}
-            />
-            <ScoreRing
-              value={budgetUsedPercent}
-              label="Presupuesto"
-              size={90}
-              strokeWidth={6}
-            />
-            <ScoreRing
-              value={85}
-              label="Salud Fin."
-              size={90}
-              strokeWidth={6}
-            />
-            <ScoreRing
-              value={92}
-              label="Metas"
-              size={90}
-              strokeWidth={6}
-            />
-            <ScoreRing
-              value={78}
-              label="Eficiencia"
-              size={90}
-              strokeWidth={6}
-            />
+            <ScoreRing value={savingsRate} label="Tasa Ahorro" size={90} strokeWidth={6} color="#22c55e" />
+            <ScoreRing value={budgetUsedPercent} label="Presupuesto" size={90} strokeWidth={6} color="#ef4444" />
+            <ScoreRing value={85} label="Salud Fin." size={90} strokeWidth={6} color="#00d4ff" />
+            <ScoreRing value={92} label="Metas" size={90} strokeWidth={6} color="#f59e0b" />
+            <ScoreRing value={78} label="Eficiencia" size={90} strokeWidth={6} color="#a78bfa" />
           </div>
         </CardContent>
       </Card>
@@ -300,23 +301,21 @@ export function FinanceSection({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {accounts.map((account) => {
+              {accounts.map((account, index) => {
                 const Icon = getAccountIcon(account.type)
+                const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length]
                 return (
-                  <div
-                    key={account.id}
-                    className="flex items-center justify-between rounded-lg bg-secondary/50 p-3"
-                  >
+                  <div key={account.id} className="flex items-center justify-between rounded-lg bg-secondary/50 p-3">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20">
-                        <Icon className="h-5 w-5 text-primary" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: color + "25" }}>
+                        <Icon className="h-5 w-5" style={{ color }} />
                       </div>
                       <div>
                         <p className="font-medium text-foreground">{account.name}</p>
                         <p className="text-xs text-muted-foreground capitalize">{account.type}</p>
                       </div>
                     </div>
-                    <span className="text-lg font-bold text-primary">
+                    <span className="text-lg font-bold" style={{ color: "#00d4ff" }}>
                       {formatCurrency(account.balance)}
                     </span>
                   </div>
@@ -336,22 +335,18 @@ export function FinanceSection({
           <CardContent>
             <div className="space-y-3">
               {recentTransactions.slice(0, 5).map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex items-center justify-between rounded-lg bg-secondary/50 p-3"
-                >
+                <div key={tx.id} className="flex items-center justify-between rounded-lg bg-secondary/50 p-3">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full ${
-                        tx.type === "income"
-                          ? "bg-success/20 text-success"
-                          : "bg-destructive/20 text-destructive"
-                      }`}
+                      className="flex h-8 w-8 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor: tx.type === "income" ? "#22c55e25" : "#ef444425",
+                      }}
                     >
                       {tx.type === "income" ? (
-                        <ArrowUpRight className="h-4 w-4" />
+                        <ArrowUpRight className="h-4 w-4 text-income" />
                       ) : (
-                        <ArrowDownRight className="h-4 w-4" />
+                        <ArrowDownRight className="h-4 w-4 text-expense" />
                       )}
                     </div>
                     <div>
@@ -360,12 +355,11 @@ export function FinanceSection({
                     </div>
                   </div>
                   <span
-                    className={`font-bold ${
-                      tx.type === "income" ? "text-success" : "text-foreground"
-                    }`}
+                    className="font-bold"
+                    style={{ color: tx.type === "income" ? "#22c55e" : "#ef4444" }}
                   >
-                    {tx.type === "income" ? "+" : ""}
-                    {formatCurrency(tx.amount)}
+                    {tx.type === "income" ? "+" : "-"}
+                    {formatCurrency(Math.abs(tx.amount))}
                   </span>
                 </div>
               ))}

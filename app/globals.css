@@ -35,6 +35,14 @@
   --sidebar-accent-foreground: oklch(0 0 0);
   --sidebar-border: oklch(0 0 0);
   --sidebar-ring: oklch(0 0 0);
+  --income: #22c55e;
+  --expense: #ef4444;
+  --health-steps: #00d4ff;
+  --health-heart: #ef4444;
+  --health-sleep: #a78bfa;
+  --health-calories: #f97316;
+  --health-weight: #34d399;
+  --finance-balance: #00d4ff;
   --font-sans: Architects Daughter, cursive;
   --font-serif: Architects Daughter, cursive;
   --font-mono: monospace;
@@ -90,6 +98,14 @@
   --sidebar-accent-foreground: oklch(0.9940 0 0);
   --sidebar-border: oklch(0.9940 0 0);
   --sidebar-ring: oklch(0.9940 0 0);
+  --income: #22c55e;
+  --expense: #ef4444;
+  --health-steps: #00d4ff;
+  --health-heart: #ef4444;
+  --health-sleep: #a78bfa;
+  --health-calories: #f97316;
+  --health-weight: #34d399;
+  --finance-balance: #00d4ff;
   --font-sans: Architects Daughter, cursive;
   --font-serif: Architects Daughter, cursive;
   --font-mono: monospace;
@@ -143,6 +159,14 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-health-steps: var(--health-steps);
+  --color-health-heart: var(--health-heart);
+  --color-health-sleep: var(--health-sleep);
+  --color-health-calories: var(--health-calories);
+  --color-health-weight: var(--health-weight);
+  --color-finance-balance: var(--finance-balance);
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);

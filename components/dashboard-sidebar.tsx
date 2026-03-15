@@ -53,18 +53,18 @@ const mainNavItems = [
 ]
 
 const healthMetrics = [
-  { label: "Pasos", icon: Footprints },
-  { label: "Calorías", icon: Flame },
-  { label: "Corazón", icon: Heart },
-  { label: "Sueño", icon: BedDouble },
-  { label: "Peso", icon: Scale },
+  { label: "Pasos",    icon: Footprints, color: "#00d4ff" },
+  { label: "Calorías", icon: Flame,      color: "#f97316" },
+  { label: "Corazón",  icon: Heart,      color: "#ef4444" },
+  { label: "Sueño",    icon: BedDouble,  color: "#a78bfa" },
+  { label: "Peso",     icon: Scale,      color: "#34d399" },
 ]
 
 const financeMetrics = [
-  { label: "Balance", icon: PiggyBank },
-  { label: "Gastos", icon: CreditCard },
-  { label: "Ahorro", icon: TrendingUp },
-  { label: "Presupuesto", icon: Target },
+  { label: "Balance",      icon: PiggyBank,  color: "#00d4ff" },
+  { label: "Gastos",       icon: CreditCard, color: "#ef4444" },
+  { label: "Ahorro",       icon: TrendingUp, color: "#22c55e" },
+  { label: "Presupuesto",  icon: Target,     color: "#f59e0b" },
 ]
 
 export function DashboardSidebar({
@@ -164,8 +164,8 @@ export function DashboardSidebar({
                 return collapsed ? (
                   <Tooltip key={metric.label}>
                     <TooltipTrigger asChild>
-                      <div className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground/60">
-                        <Icon className="h-4 w-4" />
+                      <div className="flex w-full items-center justify-center rounded-lg p-2">
+                        <Icon className="h-4 w-4" style={{ color: metric.color }} />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="right">
@@ -177,7 +177,7 @@ export function DashboardSidebar({
                     key={metric.label}
                     className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground/80"
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4" style={{ color: metric.color }} />
                     <span>{metric.label}</span>
                   </div>
                 )
@@ -200,8 +200,8 @@ export function DashboardSidebar({
                 return collapsed ? (
                   <Tooltip key={metric.label}>
                     <TooltipTrigger asChild>
-                      <div className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground/60">
-                        <Icon className="h-4 w-4" />
+                      <div className="flex w-full items-center justify-center rounded-lg p-2">
+                        <Icon className="h-4 w-4" style={{ color: metric.color }} />
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="right">
@@ -213,7 +213,7 @@ export function DashboardSidebar({
                     key={metric.label}
                     className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground/80"
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-4 w-4" style={{ color: metric.color }} />
                     <span>{metric.label}</span>
                   </div>
                 )

@@ -127,6 +127,8 @@ export default function Dashboard() {
           value={healthMetrics.steps.toLocaleString()}
           subtitle={`Meta: ${healthMetrics.stepsGoal.toLocaleString()}`}
           icon={Activity}
+          iconColor="text-health-steps"
+          valueClassName="text-health-steps"
         />
         <StatCard
           title="Balance Total"
@@ -138,13 +140,15 @@ export default function Dashboard() {
           title="Ritmo Cardiaco"
           value={`${healthMetrics.heartRate} BPM`}
           icon={Heart}
-          iconColor="text-destructive"
+          iconColor="text-health-heart"
+          valueClassName="text-health-heart"
         />
         <StatCard
           title="Ahorro Mensual"
           value={formatCurrency(financeMetrics.savings)}
           icon={TrendingUp}
-          iconColor="text-success"
+          iconColor="text-income"
+          valueClassName="text-income"
         />
       </div>
 
@@ -208,7 +212,16 @@ export default function Dashboard() {
               <span className="text-3xl font-bold text-primary">
                 {formatCurrency(financeMetrics.monthlyIncome - financeMetrics.monthlyExpenses)}
               </span>
-              <span className="text-sm text-muted-foreground">Balance mensual</span>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#22c55e" }} />
+                  <span className="text-xs font-medium text-income">Ingresos</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#ef4444" }} />
+                  <span className="text-xs font-medium text-expense">Gastos</span>
+                </div>
+              </div>
             </div>
             <div className="h-[180px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -220,62 +233,44 @@ export default function Dashboard() {
                   }))}
                 >
                   <defs>
-                    <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00d4ff" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#00d4ff" stopOpacity={0} />
+                    <linearGradient id="incomeGradOverview" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#22c55e" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="expenseGradOverview" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#3d4559" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis
                     dataKey="date"
-                    tick={{ fill: "#8892a6", fontSize: 11 }}
-                    axisLine={{ stroke: "#3d4559" }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                    axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: "#8892a6", fontSize: 11 }}
-                    axisLine={{ stroke: "#3d4559" }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                    axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "#252b3d",
-                      border: "1px solid #3d4559",
-                      borderRadius: "8px",
-                      color: "#fff",
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "4px",
+                      color: "var(--foreground)",
                     }}
                     formatter={(value: number, name: string) => [
                       formatCurrency(value),
                       name === "income" ? "Ingresos" : "Gastos",
                     ]}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    stroke="#00d4ff"
-                    strokeWidth={2}
-                    fill="url(#incomeGrad)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="#00a8cc"
-                    strokeWidth={2}
-                    fill="transparent"
-                  />
+                  <Area type="monotone" dataKey="income" stroke="#22c55e" strokeWidth={2.5} fill="url(#incomeGradOverview)" />
+                  <Area type="monotone" dataKey="expenses" stroke="#ef4444" strokeWidth={2.5} fill="url(#expenseGradOverview)" />
                 </AreaChart>
               </ResponsiveContainer>
-            </div>
-            <div className="mt-2 flex items-center justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-[#00d4ff]" />
-                <span className="text-xs text-muted-foreground">Ingresos</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-[#00a8cc]" />
-                <span className="text-xs text-muted-foreground">Gastos</span>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -290,35 +285,16 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center justify-around gap-6 py-4">
-            <ScoreRing
-              value={healthScore}
-              label="Salud"
-              size={100}
-              strokeWidth={8}
-            />
-            <ScoreRing
-              value={financeScore}
-              label="Finanzas"
-              size={100}
-              strokeWidth={8}
-            />
-            <ScoreRing
-              value={Math.round(stepsScore)}
-              label="Pasos"
-              size={100}
-              strokeWidth={8}
-            />
-            <ScoreRing
-              value={Math.round(sleepScore)}
-              label="Sueno"
-              size={100}
-              strokeWidth={8}
-            />
+            <ScoreRing value={healthScore}    label="Salud"       size={100} strokeWidth={8} color="#00d4ff" />
+            <ScoreRing value={financeScore}   label="Finanzas"    size={100} strokeWidth={8} color="#22c55e" />
+            <ScoreRing value={Math.round(stepsScore)}  label="Pasos"  size={100} strokeWidth={8} color="#00d4ff" />
+            <ScoreRing value={Math.round(sleepScore)}  label="Sueno"  size={100} strokeWidth={8} color="#a78bfa" />
             <ScoreRing
               value={Math.round((financeMetrics.budgetUsed / financeMetrics.budgetTotal) * 100)}
               label="Presupuesto"
               size={100}
               strokeWidth={8}
+              color="#ef4444"
             />
           </div>
         </CardContent>
@@ -330,7 +306,7 @@ export default function Dashboard() {
         <Card className="border-border bg-card">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
+              <Activity className="h-5 w-5 text-health-steps" />
               <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
                 Resumen de Salud
               </CardTitle>
@@ -340,26 +316,28 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Calorias</p>
-                <p className="mt-1 text-2xl font-bold text-primary">
+                <p className="mt-1 text-2xl font-bold text-health-calories">
                   {healthMetrics.calories.toLocaleString()}
                 </p>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary transition-all"
+                    className="h-full rounded-full transition-all"
                     style={{
                       width: `${Math.min((healthMetrics.calories / healthMetrics.caloriesGoal) * 100, 100)}%`,
+                      backgroundColor: "#f97316",
                     }}
                   />
                 </div>
               </div>
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Sueno</p>
-                <p className="mt-1 text-2xl font-bold text-primary">{healthMetrics.sleep}h</p>
+                <p className="mt-1 text-2xl font-bold text-health-sleep">{healthMetrics.sleep}h</p>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-primary transition-all"
+                    className="h-full rounded-full transition-all"
                     style={{
                       width: `${Math.min((healthMetrics.sleep / healthMetrics.sleepGoal) * 100, 100)}%`,
+                      backgroundColor: "#a78bfa",
                     }}
                   />
                 </div>
@@ -372,7 +350,7 @@ export default function Dashboard() {
         <Card className="border-border bg-card">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-primary" />
+              <Wallet className="h-5 w-5" style={{ color: "#00d4ff" }} />
               <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
                 Resumen Financiero
               </CardTitle>
