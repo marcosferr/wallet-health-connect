@@ -23,19 +23,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useApiData } from "@/hooks/use-api-data"
 import {
-  mockHealthMetrics,
-  mockFinanceMetrics,
   mockStepsHistory,
   mockCaloriesHistory,
   mockHeartRateHistory,
   mockSleepHistory,
   mockWeightHistory,
-  mockExpensesByCategory,
-  mockIncomeHistory,
-  mockExpenseHistory,
-  mockDailySpending,
-  mockAccounts,
-  mockRecentTransactions,
 } from "@/lib/mock-data"
 import type { ApiConfig } from "@/lib/types"
 import {
@@ -67,7 +59,7 @@ export default function Dashboard() {
   const [isHydrated, setIsHydrated] = useState(false)
 
   // Fetch real data from APIs
-  const { healthMetrics, financeMetrics, isLoading, error } = useApiData(config)
+  const { healthMetrics, financeMetrics, accounts, recentTransactions, incomeHistory, expenseHistory, expensesByCategory, dailySpending, isLoading, error } = useApiData(config)
 
   const isUsingMockData = !config.healthConnectUrl && !config.walletApiToken
 
@@ -226,10 +218,10 @@ export default function Dashboard() {
             <div className="h-[180px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={mockIncomeHistory.map((inc, i) => ({
+                  data={incomeHistory.map((inc, i) => ({
                     date: inc.date,
                     income: inc.value,
-                    expenses: mockExpenseHistory[i]?.value || 0,
+                    expenses: expenseHistory[i]?.value || 0,
                   }))}
                 >
                   <defs>
@@ -397,13 +389,13 @@ export default function Dashboard() {
           <FinanceSection
             metrics={financeMetrics}
             chartData={{
-              expenses: mockExpensesByCategory,
-              income: mockIncomeHistory,
-              expenseHistory: mockExpenseHistory,
-              dailySpending: mockDailySpending,
+              expenses: expensesByCategory,
+              income: incomeHistory,
+              expenseHistory: expenseHistory,
+              dailySpending: dailySpending,
             }}
-            accounts={mockAccounts}
-            recentTransactions={mockRecentTransactions}
+            accounts={accounts}
+            recentTransactions={recentTransactions}
           />
         )
       default:

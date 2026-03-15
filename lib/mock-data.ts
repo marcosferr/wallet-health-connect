@@ -7,18 +7,8 @@ import type {
   WalletAccount,
 } from "./types"
 
-// Generate dates for the last 7 days
-const getLast7Days = () => {
-  const days: string[] = []
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date()
-    date.setDate(date.getDate() - i)
-    days.push(date.toLocaleDateString("es-ES", { weekday: "short", day: "numeric" }))
-  }
-  return days
-}
-
-const last7Days = getLast7Days()
+// Static last-7-days labels (no Date() at module level to avoid hydration mismatch)
+const last7Days = ["Lun 9", "Mar 10", "Mié 11", "Jue 12", "Vie 13", "Sáb 14", "Dom 15"]
 
 // Mock Health Data
 export const mockHealthMetrics: HealthMetrics = {
@@ -34,39 +24,49 @@ export const mockHealthMetrics: HealthMetrics = {
   activeMinutes: 45,
 }
 
-export const mockStepsHistory: ChartDataPoint[] = last7Days.map((date, i) => ({
-  date,
-  value: Math.floor(6000 + Math.random() * 6000),
-  label: "pasos",
-}))
+export const mockStepsHistory: ChartDataPoint[] = [
+  { date: "Lun 9",  value: 9120, label: "pasos" },
+  { date: "Mar 10", value: 7340, label: "pasos" },
+  { date: "Mié 11", value: 11200, label: "pasos" },
+  { date: "Jue 12", value: 6890, label: "pasos" },
+  { date: "Vie 13", value: 8432, label: "pasos" },
+  { date: "Sáb 14", value: 10500, label: "pasos" },
+  { date: "Dom 15", value: 7800, label: "pasos" },
+]
 
-export const mockCaloriesHistory: ChartDataPoint[] = last7Days.map((date, i) => ({
-  date,
-  value: Math.floor(1800 + Math.random() * 900),
-  label: "kcal",
-}))
+export const mockCaloriesHistory: ChartDataPoint[] = [
+  { date: "Lun 9",  value: 2100, label: "kcal" },
+  { date: "Mar 10", value: 1950, label: "kcal" },
+  { date: "Mié 11", value: 2350, label: "kcal" },
+  { date: "Jue 12", value: 1870, label: "kcal" },
+  { date: "Vie 13", value: 2150, label: "kcal" },
+  { date: "Sáb 14", value: 2480, label: "kcal" },
+  { date: "Dom 15", value: 2020, label: "kcal" },
+]
 
 export const mockHeartRateHistory: ChartDataPoint[] = Array.from({ length: 24 }, (_, i) => ({
   date: `${i.toString().padStart(2, "0")}:00`,
-  value: Math.floor(60 + Math.random() * 40),
+  value: [62,60,58,57,58,60,65,72,75,78,76,74,73,75,77,76,74,72,70,69,68,67,65,64][i],
   label: "bpm",
 }))
 
-export const mockSleepHistory: ChartDataPoint[] = last7Days.map((date, i) => ({
-  date,
-  value: Number((5.5 + Math.random() * 3).toFixed(1)),
-  label: "horas",
-}))
+export const mockSleepHistory: ChartDataPoint[] = [
+  { date: "Lun 9",  value: 7.5, label: "horas" },
+  { date: "Mar 10", value: 6.8, label: "horas" },
+  { date: "Mié 11", value: 8.1, label: "horas" },
+  { date: "Jue 12", value: 6.5, label: "horas" },
+  { date: "Vie 13", value: 7.2, label: "horas" },
+  { date: "Sáb 14", value: 8.5, label: "horas" },
+  { date: "Dom 15", value: 7.9, label: "horas" },
+]
 
-export const mockWeightHistory: ChartDataPoint[] = Array.from({ length: 30 }, (_, i) => {
-  const date = new Date()
-  date.setDate(date.getDate() - (29 - i))
-  return {
-    date: date.toLocaleDateString("es-ES", { day: "numeric", month: "short" }),
-    value: Number((73 - i * 0.02 + Math.random() * 0.5).toFixed(1)),
-    label: "kg",
-  }
-})
+export const mockWeightHistory: ChartDataPoint[] = [
+  { date: "14 Feb", value: 73.5, label: "kg" },
+  { date: "21 Feb", value: 73.2, label: "kg" },
+  { date: "28 Feb", value: 73.0, label: "kg" },
+  { date: "7 Mar",  value: 72.8, label: "kg" },
+  { date: "14 Mar", value: 72.5, label: "kg" },
+]
 
 // Mock Finance Data
 export const mockFinanceMetrics: FinanceMetrics = {
@@ -118,7 +118,7 @@ export const mockRecentTransactions: WalletRecord[] = [
     currency: "EUR",
     categoryId: "food",
     accountId: "1",
-    recordDate: new Date().toISOString(),
+    recordDate: "2026-03-15T10:30:00.000Z",
     note: "Compras supermercado",
     payee: "Mercadona",
     type: "expense",
@@ -129,7 +129,7 @@ export const mockRecentTransactions: WalletRecord[] = [
     currency: "EUR",
     categoryId: "transport",
     accountId: "1",
-    recordDate: new Date(Date.now() - 86400000).toISOString(),
+    recordDate: "2026-03-14T09:15:00.000Z",
     note: "Gasolina",
     payee: "Repsol",
     type: "expense",
@@ -140,7 +140,7 @@ export const mockRecentTransactions: WalletRecord[] = [
     currency: "EUR",
     categoryId: "salary",
     accountId: "1",
-    recordDate: new Date(Date.now() - 86400000 * 2).toISOString(),
+    recordDate: "2026-03-13T08:00:00.000Z",
     note: "Nómina Marzo",
     payee: "Empresa ABC",
     type: "income",
@@ -151,7 +151,7 @@ export const mockRecentTransactions: WalletRecord[] = [
     currency: "EUR",
     categoryId: "services",
     accountId: "1",
-    recordDate: new Date(Date.now() - 86400000 * 3).toISOString(),
+    recordDate: "2026-03-12T11:00:00.000Z",
     note: "Factura electricidad",
     payee: "Iberdrola",
     type: "expense",
@@ -162,15 +162,19 @@ export const mockRecentTransactions: WalletRecord[] = [
     currency: "EUR",
     categoryId: "entertainment",
     accountId: "1",
-    recordDate: new Date(Date.now() - 86400000 * 4).toISOString(),
+    recordDate: "2026-03-11T20:00:00.000Z",
     note: "Netflix + Spotify",
     payee: "Suscripciones",
     type: "expense",
   },
 ]
 
-export const mockDailySpending: ChartDataPoint[] = last7Days.map((date) => ({
-  date,
-  value: Math.floor(30 + Math.random() * 120),
-  label: "€",
-}))
+export const mockDailySpending: ChartDataPoint[] = [
+  { date: "Lun 9",  value: 45,  label: "€" },
+  { date: "Mar 10", value: 120, label: "€" },
+  { date: "Mié 11", value: 38,  label: "€" },
+  { date: "Jue 12", value: 95,  label: "€" },
+  { date: "Vie 13", value: 67,  label: "€" },
+  { date: "Sáb 14", value: 142, label: "€" },
+  { date: "Dom 15", value: 55,  label: "€" },
+]

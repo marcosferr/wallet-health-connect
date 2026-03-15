@@ -164,22 +164,26 @@ export function DashboardSidebar({
                 return collapsed ? (
                   <Tooltip key={metric.label}>
                     <TooltipTrigger asChild>
-                      <div className="flex w-full items-center justify-center rounded-lg p-2">
+                      <button
+                        onClick={() => onSectionChange("health")}
+                        className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+                      >
                         <Icon className="h-4 w-4" style={{ color: metric.color }} />
-                      </div>
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
                       {metric.label}
                     </TooltipContent>
                   </Tooltip>
                 ) : (
-                  <div
+                  <button
                     key={metric.label}
-                    className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground/80"
+                    onClick={() => onSectionChange("health")}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground/80 hover:bg-sidebar-accent hover:text-foreground transition-colors"
                   >
                     <Icon className="h-4 w-4" style={{ color: metric.color }} />
                     <span>{metric.label}</span>
-                  </div>
+                  </button>
                 )
               })}
             </>
@@ -200,22 +204,26 @@ export function DashboardSidebar({
                 return collapsed ? (
                   <Tooltip key={metric.label}>
                     <TooltipTrigger asChild>
-                      <div className="flex w-full items-center justify-center rounded-lg p-2">
+                      <button
+                        onClick={() => onSectionChange("finance")}
+                        className="flex w-full items-center justify-center rounded-lg p-2 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+                      >
                         <Icon className="h-4 w-4" style={{ color: metric.color }} />
-                      </div>
+                      </button>
                     </TooltipTrigger>
                     <TooltipContent side="right">
                       {metric.label}
                     </TooltipContent>
                   </Tooltip>
                 ) : (
-                  <div
+                  <button
                     key={metric.label}
-                    className="flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground/80"
+                    onClick={() => onSectionChange("finance")}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm text-muted-foreground/80 hover:bg-sidebar-accent hover:text-foreground transition-colors"
                   >
                     <Icon className="h-4 w-4" style={{ color: metric.color }} />
                     <span>{metric.label}</span>
-                  </div>
+                  </button>
                 )
               })}
             </>
