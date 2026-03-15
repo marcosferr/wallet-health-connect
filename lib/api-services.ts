@@ -186,18 +186,23 @@ export class WalletService {
       })
     }
 
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        "Content-Type": "application/json",
-      },
-    })
+    try {
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          "Content-Type": "application/json",
+        },
+      })
 
-    if (!response.ok) {
-      throw new Error(`Wallet API error: ${response.status}`)
+      if (!response.ok) {
+        throw new Error(`Wallet API error: ${response.status} ${response.statusText}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      throw error
     }
-
-    return response.json()
   }
 
   async getAccounts(): Promise<WalletAccount[]> {

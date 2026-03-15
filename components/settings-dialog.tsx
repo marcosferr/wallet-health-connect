@@ -62,12 +62,14 @@ export function SettingsDialog({ config, onConfigChange }: SettingsDialogProps) 
     setTestResults((prev) => ({ ...prev, wallet: "testing" }))
     try {
       const response = await fetch("https://rest.budgetbakers.com/wallet/accounts", {
+        method: "GET",
         headers: {
           Authorization: `Bearer ${localConfig.walletApiToken}`,
+          "Content-Type": "application/json",
         },
       })
       setTestResults((prev) => ({ ...prev, wallet: response.ok ? "success" : "error" }))
-    } catch {
+    } catch (error) {
       setTestResults((prev) => ({ ...prev, wallet: "error" }))
     }
   }

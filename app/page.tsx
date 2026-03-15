@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useApiData } from "@/hooks/use-api-data"
 import {
   mockHealthMetrics,
   mockFinanceMetrics,
@@ -36,6 +37,7 @@ import {
   mockAccounts,
   mockRecentTransactions,
 } from "@/lib/mock-data"
+import type { ApiConfig } from "@/lib/types"
 import {
   AreaChart,
   Area,
@@ -47,12 +49,6 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts"
-
-interface ApiConfig {
-  healthConnectUrl: string
-  healthConnectToken: string
-  walletApiToken: string
-}
 
 type TimePeriod = "today" | "week" | "month"
 
@@ -66,14 +62,29 @@ export default function Dashboard() {
     healthConnectToken: "",
     walletApiToken: "",
   })
-  const [greeting, setGreeting] = useState("")
-  const [currentDate, setCurrentDate] = useState("")
+  const [greeting, setGreeting] = useState("Buenos días")
+  const [currentDate, setCurrentDate] = useState("Cargando...")
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Fetch real data from APIs
+  const { healthMetrics, financeMetrics, isLoading, error } = useApiData(config)
 
   const isUsingMockData = !config.healthConnectUrl && !config.walletApiToken
 
   useEffect(() => {
+    // Load config from localStorage
+    const savedConfig = localStorage.getItem("dashboardConfig")
+    if (savedConfig) {
+      try {
+        setConfig(JSON.parse(savedConfig))
+      } catch {
+        console.error("[v0] Failed to parse saved config")
+      }
+    }
+
+    // Set greeting and date
     const hour = new Date().getHours()
-    if (hour < 12) setGreeting("Buenos dias")
+    if (hour < 12) setGreeting("Buenos días")
     else if (hour < 18) setGreeting("Buenas tardes")
     else setGreeting("Buenas noches")
 
@@ -85,15 +96,25 @@ export default function Dashboard() {
     }
     const date = new Date().toLocaleDateString("es-ES", options)
     setCurrentDate(date.charAt(0).toUpperCase() + date.slice(1))
+    setIsHydrated(true)
   }, [])
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(value)
 
+  // Save config to localStorage when it changes
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem("dashboardConfig", JSON.stringify(config))
+    }
+  }, [config, isHydrated])
+
   // Calculate scores
-  const stepsScore = Math.min((mockHealthMetrics.steps / mockHealthMetrics.stepsGoal) * 100, 100)
-  const sleepScore = Math.min((mockHealthMetrics.sleep / mockHealthMetrics.sleepGoal) * 100, 100)
-  const savingsScore = Math.min((mockFinanceMetrics.savings / mockFinanceMetrics.monthlyIncome) * 100 * 2, 100)
+  const stepsScore = Math.min((healthMetrics.steps / healthMetrics.stepsGoal) * 100, 100)
+  const sleepScore = Math.min((healthMetrics.sleep / healthMetrics.sleepGoal) * 100, 100)
+  const savingsScore = financeMetrics.monthlyIncome > 0 
+    ? Math.min((financeMetrics.savings / financeMetrics.monthlyIncome) * 100 * 2, 100)
+    : 0
   const healthScore = Math.round((stepsScore + sleepScore) / 2)
   const financeScore = Math.round(savingsScore)
 
@@ -103,25 +124,25 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           title="Pasos Hoy"
-          value={mockHealthMetrics.steps.toLocaleString()}
-          subtitle={`Meta: ${mockHealthMetrics.stepsGoal.toLocaleString()}`}
+          value={healthMetrics.steps.toLocaleString()}
+          subtitle={`Meta: ${healthMetrics.stepsGoal.toLocaleString()}`}
           icon={Activity}
         />
         <StatCard
           title="Balance Total"
-          value={formatCurrency(mockFinanceMetrics.totalBalance)}
+          value={formatCurrency(financeMetrics.totalBalance)}
           icon={Wallet}
           trend={{ value: 5, isPositive: true }}
         />
         <StatCard
           title="Ritmo Cardiaco"
-          value={`${mockHealthMetrics.heartRate} BPM`}
+          value={`${healthMetrics.heartRate} BPM`}
           icon={Heart}
           iconColor="text-destructive"
         />
         <StatCard
           title="Ahorro Mensual"
-          value={formatCurrency(mockFinanceMetrics.savings)}
+          value={formatCurrency(financeMetrics.savings)}
           icon={TrendingUp}
           iconColor="text-success"
         />
@@ -185,7 +206,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="mb-4 flex items-center justify-between">
               <span className="text-3xl font-bold text-primary">
-                {formatCurrency(mockFinanceMetrics.monthlyIncome - mockFinanceMetrics.monthlyExpenses)}
+                {formatCurrency(financeMetrics.monthlyIncome - financeMetrics.monthlyExpenses)}
               </span>
               <span className="text-sm text-muted-foreground">Balance mensual</span>
             </div>
@@ -294,7 +315,7 @@ export default function Dashboard() {
               strokeWidth={8}
             />
             <ScoreRing
-              value={Math.round((mockFinanceMetrics.budgetUsed / mockFinanceMetrics.budgetTotal) * 100)}
+              value={Math.round((financeMetrics.budgetUsed / financeMetrics.budgetTotal) * 100)}
               label="Presupuesto"
               size={100}
               strokeWidth={8}
@@ -320,25 +341,25 @@ export default function Dashboard() {
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Calorias</p>
                 <p className="mt-1 text-2xl font-bold text-primary">
-                  {mockHealthMetrics.calories.toLocaleString()}
+                  {healthMetrics.calories.toLocaleString()}
                 </p>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary transition-all"
                     style={{
-                      width: `${Math.min((mockHealthMetrics.calories / mockHealthMetrics.caloriesGoal) * 100, 100)}%`,
+                      width: `${Math.min((healthMetrics.calories / healthMetrics.caloriesGoal) * 100, 100)}%`,
                     }}
                   />
                 </div>
               </div>
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Sueno</p>
-                <p className="mt-1 text-2xl font-bold text-primary">{mockHealthMetrics.sleep}h</p>
+                <p className="mt-1 text-2xl font-bold text-primary">{healthMetrics.sleep}h</p>
                 <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                   <div
                     className="h-full rounded-full bg-primary transition-all"
                     style={{
-                      width: `${Math.min((mockHealthMetrics.sleep / mockHealthMetrics.sleepGoal) * 100, 100)}%`,
+                      width: `${Math.min((healthMetrics.sleep / healthMetrics.sleepGoal) * 100, 100)}%`,
                     }}
                   />
                 </div>
@@ -362,13 +383,13 @@ export default function Dashboard() {
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Ingresos</p>
                 <p className="mt-1 text-2xl font-bold text-success">
-                  {formatCurrency(mockFinanceMetrics.monthlyIncome)}
+                  {formatCurrency(financeMetrics.monthlyIncome)}
                 </p>
               </div>
               <div className="rounded-lg bg-secondary/50 p-4">
                 <p className="text-xs text-muted-foreground">Gastos</p>
                 <p className="mt-1 text-2xl font-bold text-destructive">
-                  {formatCurrency(mockFinanceMetrics.monthlyExpenses)}
+                  {formatCurrency(financeMetrics.monthlyExpenses)}
                 </p>
               </div>
             </div>
@@ -383,7 +404,7 @@ export default function Dashboard() {
       case "health":
         return (
           <HealthSection
-            metrics={mockHealthMetrics}
+            metrics={healthMetrics}
             chartData={{
               steps: mockStepsHistory,
               calories: mockCaloriesHistory,
@@ -396,7 +417,7 @@ export default function Dashboard() {
       case "finance":
         return (
           <FinanceSection
-            metrics={mockFinanceMetrics}
+            metrics={financeMetrics}
             chartData={{
               expenses: mockExpensesByCategory,
               income: mockIncomeHistory,
@@ -430,7 +451,7 @@ export default function Dashboard() {
                 <h1 className="text-xl font-semibold text-foreground">
                   {activeSection === "overview" ? "Dashboard" : activeSection === "health" ? "Salud y Fitness" : "Finanzas"}
                 </h1>
-                <p className="text-sm text-muted-foreground">{currentDate}</p>
+                <p className="text-sm text-muted-foreground">{isHydrated ? currentDate : "Cargando..."}</p>
               </div>
             </div>
 
