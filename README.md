@@ -1,51 +1,132 @@
 # wallet-health-connect
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+Este es un proyecto de [Next.js](https://nextjs.org) generado inicialmente con [v0](https://v0.app).
 
-## Built with v0
+## Construido con v0
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+Este repositorio está vinculado a un proyecto de [v0](https://v0.app). Puedes seguir desarrollándolo desde el siguiente enlace: inicia nuevos chats para hacer cambios y v0 enviará commits directamente a este repo. Cada merge a `main` se desplegará automáticamente.
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_VFOYteTs6MtsugQbeHv0e4VidrEL)
+[Seguir trabajando en v0 →](https://v0.app/chat/projects/prj_VFOYteTs6MtsugQbeHv0e4VidrEL)
 
-## Getting Started
+## Primeros pasos
 
-First, run the development server:
+Primero, ejecuta el servidor de desarrollo:
 
 ```bash
 npm run dev
-# or
+# o
 yarn dev
-# or
+# o
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver el resultado.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Puedes empezar a editar la aplicación modificando `app/page.tsx`. La página se actualiza automáticamente mientras editas.
 
-## External Integrations
+## Integraciones externas
 
-This dashboard can read live data from:
+Este dashboard combina dos fuentes externas de datos:
 
-- HealthConnectGateway v2
-- Budget Bakers Wallet API
+- Datos de salud desde HealthConnectGateway v2
+- Datos financieros desde la API de Wallet de Budget Bakers
 
-The app now proxies both integrations through internal Next.js API routes so you can keep tokens server-side and avoid browser CORS issues.
+El objetivo de esta app es mostrar ambos dominios en un solo dashboard, manteniendo un fallback seguro a datos mock cuando faltan credenciales o cuando un proveedor no está disponible temporalmente.
 
-### Configuration priority
+### HealthConnectGateway
 
-1. Values saved in the settings dialog (`localStorage` in the browser)
-2. Server-side environment variables from `.env.local`
-3. Built-in mock data
+HealthConnectGateway es el proveedor de datos de salud usado por este proyecto. La integración de esta app está basada en las rutas v2 que compartiste, especialmente en los endpoints autenticados bajo `/api/v2`.
 
-If no credentials are available, or if a provider is temporarily unavailable, the UI stays usable with mock charts and cards.
+Referencias relevantes:
+
+- Repositorio: https://github.com/ShuchirJ/HCGateway
+- Archivo de rutas usado como referencia: https://github.com/ShuchirJ/HCGateway/blob/main/api/apiVersions/v2/routes.py
+- Instancia hospedada usada por esta app: https://health.tereredev.com
+
+La app usa actualmente estos conceptos de HCGateway:
+
+- `Authorization: Bearer <token>` para solicitudes autenticadas
+- `POST /api/v2/fetch/<method>` para leer registros de salud
+- Métodos de salud como `steps`, `heartRate`, `sleepSession`, `weight`, `distance` y `totalCaloriesBurned`
+
+En este proyecto, los datos de HCGateway se usan para poblar:
+
+- Métricas actuales de salud
+- Historial semanal de pasos
+- Historial de calorías
+- Gráfico de ritmo cardíaco
+- Historial de sueño
+- Evolución del peso
+
+### API de Wallet de Budget Bakers
+
+Wallet es el proveedor financiero usado por este proyecto. La implementación sigue la documentación REST de Budget Bakers y utiliza los endpoints de datos de usuario expuestos bajo su API v1.
+
+Referencias relevantes:
+
+- Documentación: https://rest.budgetbakers.com/wallet/reference
+- OpenAPI: https://rest.budgetbakers.com/wallet/openapi/ui
+- Base de API usada por esta app: https://rest.budgetbakers.com/wallet/v1/api
+
+La app usa actualmente Wallet para:
+
+- Cuentas
+- Registros financieros
+- Categorías
+
+Esas respuestas luego se agregan en:
+
+- Balance total
+- Ingresos y gastos mensuales
+- Ahorro
+- Gráficos de gastos por categoría
+- Gráficos de gasto diario
+- Transacciones recientes
+
+### Cómo los conecté
+
+Ambas integraciones están conectadas mediante rutas internas de la API de Next.js, en lugar de llamadas directas desde el navegador.
+
+Rutas agregadas en este proyecto:
+
+- `app/api/dashboard/route.ts`: carga y combina datos de salud y finanzas en un solo payload para la UI
+- `app/api/integrations/test/route.ts`: valida las credenciales de los proveedores desde el diálogo de configuración
+
+Por qué se usó este enfoque:
+
+- Evitar exponer detalles de implementación de los proveedores directamente en la capa de UI
+- Reducir problemas de CORS del lado del navegador
+- Permitir usar variables de entorno del servidor sin obligar a poner todos los secretos en el navegador
+- Mantener un fallback consistente a datos mock cuando no hay autenticación real disponible
+
+La lógica de integración del servidor vive en `lib/server/dashboard-data.ts` y hace lo siguiente:
+
+- Resuelve credenciales desde overrides en `localStorage` o variables de entorno del servidor
+- Llama a endpoints v2 de HCGateway para datos de salud
+- Llama a endpoints paginados v1 de Wallet para datos financieros
+- Mapea payloads específicos de cada proveedor a los tipos internos de la app
+- Agrega datos para gráficos y métricas resumen
+- Hace fallback a mock data si un proveedor falta o devuelve error
+
+### Prioridad de configuración
+
+La app resuelve credenciales en este orden:
+
+1. Valores guardados en el diálogo de configuración en `localStorage`
+2. Variables de entorno del servidor desde `.env.local`
+3. Datos mock integrados cuando no hay una configuración válida disponible
+
+Esto significa que puedes ejecutar la app en tres modos:
+
+- Totalmente mock, sin credenciales
+- Mixto, con solo salud o solo finanzas configuradas
+- Totalmente en vivo, con ambos proveedores configurados
 
 ### `.env.local`
 
-Create a `.env.local` file based on `.env.example`.
+Crea un archivo `.env.local` a partir de `.env.example`.
 
-Recommended values for your setup:
+Valores recomendados para tu configuración:
 
 ```env
 HCGATEWAY_BASE_URL=https://health.tereredev.com
@@ -53,18 +134,19 @@ HCGATEWAY_TOKEN=your_healthconnectgateway_token
 WALLET_API_TOKEN=your_budget_bakers_wallet_token
 ```
 
-Notes:
+Notas:
 
-- `HCGATEWAY_BASE_URL` should be the host only. The app adds `/api/v2/...` internally.
-- Wallet API calls are sent to `https://rest.budgetbakers.com/wallet/v1/api`.
-- You can still override these values per browser session from the in-app settings dialog.
+- `HCGATEWAY_BASE_URL` debe ser solo el host. La app agrega `/api/v2/...` internamente.
+- Las solicitudes a Wallet se envían a `https://rest.budgetbakers.com/wallet/v1/api`.
+- Aún puedes sobrescribir los valores del env por sesión del navegador desde el diálogo de configuración.
+- Si no hay auth válida disponible, el dashboard mantiene los mockups activos en lugar de romper la UI.
 
-## Learn More
+## Más información
 
-To learn more, take a look at the following resources:
+Para aprender más, revisa los siguientes recursos:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+- [Documentación de Next.js](https://nextjs.org/docs) - características y API de Next.js.
+- [Learn Next.js](https://nextjs.org/learn) - tutorial interactivo de Next.js.
+- [Documentación de v0](https://v0.app/docs) - cómo usar v0.
 
 <a href="https://v0.app/chat/api/kiro/clone/marcosferr/wallet-health-connect" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
